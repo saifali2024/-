@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>حاسبة الخدمة العسكرية</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Add Babel for in-browser JSX & TypeScript transpilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/"
+  }
+}
+</script>
+<style>
+      @media print {
+        body {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+      }
+
+      /* Base styles for the printable A4 page layout */
+      .a4-page {
+          width: 21cm;
+          min-height: 29.7cm;
+          margin: 1rem auto;
+          box-sizing: border-box;
+      }
+      
+      /* Styles for Professional Form Layout */
+      .professional-form-layout {
+        font-family: 'Times New Roman', Times, serif;
+        color: #000;
+        background-color: #fff;
+        border: 1px solid #333;
+        padding: 1.5cm;
+      }
+      .professional-form-layout .form-header {
+        text-align: center;
+        margin-bottom: 1.5rem;
+      }
+      .professional-form-layout .form-header h1 {
+        font-size: 20px;
+        font-weight: bold;
+        display: inline-block;
+        border-bottom: 2px solid #000;
+        padding: 0 2rem 0.5rem 2rem;
+        margin-bottom: 1rem;
+      }
+      .professional-form-layout .form-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 14px;
+        margin-bottom: 2rem;
+      }
+      .professional-form-layout .section-title {
+        font-size: 16px;
+        font-weight: bold;
+        background-color: #e0e0e0;
+        padding: 6px 10px;
+        margin: 1.5rem 0 1rem 0;
+        border: 1px solid #999;
+      }
+      .professional-form-layout .personal-info-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 0;
+        font-size: 14px;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+      }
+      .professional-form-layout .info-cell {
+        border: 1px solid #888;
+        padding: 8px;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .professional-form-layout .info-cell-label {
+        background-color: #f2f2f2;
+        font-weight: bold;
+      }
+      .professional-form-layout .service-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+        font-size: 14px;
+      }
+      .professional-form-layout .service-table th,
+      .professional-form-layout .service-table td {
+        border: 1px solid #333;
+        padding: 8px;
+        text-align: center;
+        color: #000;
+      }
+       .professional-form-layout .service-table th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+      }
+      .professional-form-layout .service-table tfoot {
+        font-weight: bold;
+      }
+      .professional-form-layout .service-table .summary-total-row {
+        background-color: #e3f2fd; /* Light blue */
+        color: #0d47a1; /* Dark blue */
+      }
+      .professional-form-layout .service-table .summary-total-row td:first-child {
+        text-align: right;
+        padding-right: 1rem;
+      }
+      .professional-form-layout .deduction-summary-box {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
+        border: 1.5px solid #000;
+        border-radius: 4px;
+        text-align: center;
+        font-size: 14px;
+        line-height: 1.8;
+      }
+      .professional-form-layout .deduction-summary-box strong {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-size: 15px;
+        color: #000;
+      }
+      .professional-form-layout .deduction-summary-box span {
+        font-weight: normal;
+      }
+
+      .professional-form-layout .signature-area {
+        margin-top: 4rem;
+        display: flex;
+        justify-content: space-between;
+        font-size: 14px;
+        text-align: center;
+      }
+      .professional-form-layout .signature-area .signer {
+        width: 40%;
+      }
+      .professional-form-layout .signature-area .signer p {
+        margin: 0;
+      }
+      .professional-form-layout .signature-area .signature-line {
+        border-bottom: 1px dotted #000;
+        height: 2.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      /* Styles for Decision Layout */
+      .decision-layout {
+          font-family: Arial, sans-serif;
+          color: #000;
+          background-color: #fff;
+          font-size: 16px;
+          padding: 5cm 2cm 4cm;
+      }
+      .decision-layout .copy-to-section {
+          font-size: 12px;
+      }
+      .decision-layout .decision-subject {
+        font-family: 'Times New Roman', Times, serif;
+      }
+      .decision-layout .decision-total-table {
+        width: 100%;
+        margin: 24px auto; 
+        border: 2px solid #000;
+        border-collapse: collapse;
+        text-align: center;
+        font-size: 16px;
+      }
+      .decision-layout .decision-total-table th,
+      .decision-layout .decision-total-table td {
+          border: 1px solid #000;
+          padding: 6px 8px;
+          text-align: center;
+          color: #000;
+      }
+</style>
+  <link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-gray-100 dark:bg-gray-900">
+    <div id="root"></div>
+    <script type="text/babel" data-type="module" src="./index.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
