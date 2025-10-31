@@ -1,4 +1,4 @@
-export type ServiceType = 'عسكرية' | 'عسكرية مضاعفة' | '';
+export type ServiceType = 'عسكرية' | 'عسكرية مضاعفة' | 'جهادية' | 'اسر' | '';
 
 export interface ServiceRow {
   id: number;
