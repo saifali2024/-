@@ -7,7 +7,7 @@
     "withGlobalTauri": true
   },
   "package": {
-    "productName": "نظام احتساب الخدمة",
+    "productName": "حاسبة احتساب الخدمة",
     "version": "1.0.0"
   },
   "tauri": {
@@ -37,7 +37,7 @@
       {
         "fullscreen": false,
         "resizable": true,
-        "title": "نظام احتساب الخدمة",
+        "title": "حاسبة احتساب الخدمة",
         "width": 1024,
         "height": 768,
         "minWidth": 800,

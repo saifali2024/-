@@ -1,7 +1,11 @@
-
 {
-  "name": "service-calculator-webapp",
+  "name": "service-calculator",
   "private": true,
   "version": "1.0.0",
-  "description": "تطبيق ويب لحساب إجمالي مدة الخدمة العسكرية."
+  "scripts": {
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^1.5.11"
+  }
 }
