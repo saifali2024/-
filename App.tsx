@@ -590,7 +590,7 @@ const App: React.FC = () => {
           <div className="pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="text-center sm:text-right text-sm text-gray-500 dark:text-gray-400 order-last sm:order-first">
                 <p>تصميم</p>
-                <p className="font-semibold">المبرمج سيف علي</p>
+                <p className="font-semibold text-yellow-600 dark:text-yellow-500">المبرمج سيف علي</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                 <button onClick={handlePrintForm} className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 focus:ring-4 focus:outline-none focus:ring-gray-300 dark:bg-gray-500 dark:hover:bg-gray-600 dark:focus:ring-gray-800 transition w-full sm:w-auto">
