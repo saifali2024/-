@@ -484,7 +484,7 @@ const App: React.FC = () => {
             <div className="text-center">
               <div className="flex justify-center items-center gap-3 text-gray-700 dark:text-gray-200">
                 <SoldierIcon className="w-8 h-8"/>
-                <h1 className="text-2xl sm:text-3xl font-bold">حاسبة احتساب الخدمة</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold font-kufi">حاسبة احتساب الخدمة</h1>
               </div>
               <p className="text-gray-500 dark:text-gray-400 mt-2">
                 أدخل البيانات المطلوبة لحساب مدة الخدمة الإجمالية.
