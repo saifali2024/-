@@ -1,4 +1,4 @@
-export type ServiceType = 'عسكرية' | 'عسكرية مضاعفة' | '';
+export type ServiceType = 'عسكرية' | 'حركات' | '';
 
 export interface ServiceRow {
   id: number;
@@ -12,4 +12,15 @@ export interface Duration {
   years: number;
   months: number;
   days: number;
+}
+
+export type UserRole = 'admin' | 'user';
+
+export interface User {
+  id: string;
+  fullName: string;
+  username: string;
+  password?: string;
+  role: UserRole;
+  createdAt: number;
 }

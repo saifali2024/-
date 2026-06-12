@@ -1,7 +1,8 @@
 
-import React, { useState, useCallback, useMemo } from 'react';
-import { ServiceRow, Duration, ServiceType } from './types';
-import { SoldierIcon, PlusIcon, TrashIcon, PrintIcon, ApprovedIcon } from './components/icons';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { ServiceRow, Duration, ServiceType, User } from './types';
+import { SoldierIcon, PlusIcon, TrashIcon, PrintIcon, ApprovedIcon, UserIcon, LogOutIcon } from './components/icons';
+import { ManageUsersModal } from './components/ManageUsersModal';
 
 const CustomDateInput = ({ id, value, onChange, className }: { id?: string, value: string, onChange: (e: any) => void, className?: string }) => {
   const [d, setD] = useState('');
@@ -92,7 +93,115 @@ const SALARY_MAP: { [key: string]: string } = {
   'بدون شهادة': '170000',
 };
 
+const defaultUsers: User[] = [
+  { id: '1', fullName: 'المدير العام', username: 'admin', password: '123', role: 'admin', createdAt: Date.now() },
+];
+
+const loadUsers = (): User[] => {
+  const usersStr = localStorage.getItem('appUsers');
+  if (usersStr) {
+    try {
+      return JSON.parse(usersStr);
+    } catch { }
+  }
+  return defaultUsers;
+};
+
+const LoginScreen: React.FC<{ onLogin: (user: User) => void, users: User[] }> = ({ onLogin, users }) => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!username.trim()) {
+      setError('يرجى إدخال اسم المستخدم');
+      return;
+    }
+    if (!password.trim()) {
+      setError('يرجى إدخال كلمة المرور');
+      return;
+    }
+    const user = users.find(u => u.username === username.trim() && u.password === password);
+    if (user) {
+      onLogin(user);
+    } else {
+      setError('اسم المستخدم أو كلمة المرور غير صحيحة');
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-100 dark:bg-gray-900 font-[system-ui]" dir="rtl">
+      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-4">
+            <SoldierIcon className="w-12 h-12 text-yellow-500" />
+          </div>
+          <h1 className="text-2xl font-bold font-kufi text-gray-800 dark:text-white">تسجيل الدخول</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-2">نظام احتساب الخدمة</p>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">اسم المستخدم</label>
+            <input 
+              type="text" 
+              value={username} 
+              onChange={e => setUsername(e.target.value)} 
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-500 dark:text-white"
+              placeholder="ادخل اسم المستخدم"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">كلمة المرور</label>
+            <input 
+              type="password" 
+              value={password} 
+              onChange={e => setPassword(e.target.value)} 
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-500 dark:text-white"
+              placeholder="••••••••"
+            />
+          </div>
+          <button 
+            type="submit" 
+            className="w-full py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-lg transition-colors focus:ring-4 focus:ring-yellow-300 dark:focus:ring-yellow-800"
+          >
+            دخول
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const App: React.FC = () => {
+  const [users, setUsers] = useState<User[]>(loadUsers);
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    const cuStr = localStorage.getItem('currentUserObj');
+    if (cuStr) {
+      try {
+        return JSON.parse(cuStr);
+      } catch {}
+    }
+    return null;
+  });
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isManageUsersOpen, setIsManageUsersOpen] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('appUsers', JSON.stringify(users));
+  }, [users]);
+
+  const handleLogin = (user: User) => {
+    localStorage.setItem('currentUserObj', JSON.stringify(user));
+    setCurrentUser(user);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('currentUserObj');
+    setCurrentUser(null);
+  };
+
   const [name, setName] = useState<string>('');
   const [dateOfBirth, setDateOfBirth] = useState<string>('');
   const [appointmentDate, setAppointmentDate] = useState<string>('');
@@ -199,7 +308,7 @@ const App: React.FC = () => {
     let totalDays = 0;
 
     for (const row of validServiceRows) {
-        const multiplier = row.serviceType === 'عسكرية مضاعفة' ? 2 : 1;
+        const multiplier = row.serviceType === 'حركات' ? 2 : 1;
         if (row.duration) {
           totalDays += row.duration.days * multiplier;
           totalMonths += row.duration.months * multiplier;
@@ -281,6 +390,63 @@ const App: React.FC = () => {
     if (amount === 0) currency = 'دينار'; else if (amount === 1) currency = 'دينار'; else if (amount === 2) currency = 'ديناران'; else if (amount >= 3 && amount <= 10) currency = 'دنانير';
     return `${words} ${currency} فقط لا غير`;
   }, [rawPensionDeductionAmount]);
+
+  const totalServiceInWords = useMemo(() => {
+    const { days, months, years } = tableTotalDuration;
+    
+    const numToArabicMasculine = (n: number) => {
+      const units = ['', 'واحد', 'اثنان', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة'];
+      const teens = ['عشرة', 'أحد عشر', 'اثنا عشر', 'ثلاثة عشر', 'أربعة عشر', 'خمسة عشر', 'ستة عشر', 'سبعة عشر', 'ثمانية عشر', 'تسعة عشر'];
+      const tens = ['', 'عشرة', 'عشرون', 'ثلاثون', 'أربعون', 'خمسون', 'ستون', 'سبعون', 'ثمانون', 'تسعون'];
+      if (n < 10) return units[n];
+      if (n < 20) return teens[n - 10];
+      const unit = n % 10;
+      const ten = Math.floor(n / 10);
+      return (unit > 0 ? units[unit] + ' و' : '') + tens[ten];
+    };
+
+    const numToArabicFeminine = (n: number) => {
+      const unitsFeminine = ['', 'إحدى', 'اثنتان', 'ثلاث', 'أربع', 'خمس', 'ست', 'سبع', 'ثمان', 'تسع'];
+      const teensFeminine = ['عشرة', 'إحدى عشرة', 'اثنتا عشرة', 'ثلاث عشرة', 'أربع عشرة', 'خمس عشرة', 'ست عشرة', 'سبع عشرة', 'ثماني عشرة', 'تسع عشرة'];
+      const tens = ['', 'عشرة', 'عشرون', 'ثلاثون', 'أربعون', 'خمسون', 'ستون', 'سبعون', 'ثمانون', 'تسعون'];
+      if (n < 10) return unitsFeminine[n];
+      if (n < 20) return teensFeminine[n - 10];
+      const unit = n % 10;
+      const ten = Math.floor(n / 10);
+      return (unit > 0 ? unitsFeminine[unit] + ' و' : '') + tens[ten];
+    };
+
+    const result = [];
+    
+    const yearsWords: Record<number, string> = {
+      1: 'سنة واحدة', 2: 'سنتان', 3: 'ثلاث سنوات', 4: 'أربع سنوات', 5: 'خمس سنوات',
+      6: 'ست سنوات', 7: 'سبع سنوات', 8: 'ثمان سنوات', 9: 'تسع سنوات', 10: 'عشر سنوات'
+    };
+    if (years > 0) {
+      if (years <= 10) result.push(yearsWords[years]);
+      else result.push(numToArabicFeminine(years) + ' سنة');
+    }
+
+    const monthsWords: Record<number, string> = {
+      1: 'شهر واحد', 2: 'شهران', 3: 'ثلاثة أشهر', 4: 'أربعة أشهر', 5: 'خمسة أشهر',
+      6: 'ستة أشهر', 7: 'سبعة أشهر', 8: 'ثمانية أشهر', 9: 'تسعة أشهر', 10: 'عشرة أشهر'
+    };
+    if (months > 0) {
+      if (months <= 10) result.push(monthsWords[months]);
+      else result.push(numToArabicMasculine(months) + ' شهراً');
+    }
+
+    const daysWords: Record<number, string> = {
+      1: 'يوم واحد', 2: 'يومان', 3: 'ثلاثة أيام', 4: 'أربعة أيام', 5: 'خمسة أيام',
+      6: 'ستة أيام', 7: 'سبعة أيام', 8: 'ثمانية أيام', 9: 'تسعة أيام', 10: 'عشرة أيام'
+    };
+    if (days > 0) {
+      if (days <= 10) result.push(daysWords[days]);
+      else result.push(numToArabicMasculine(days) + ' يوماً');
+    }
+
+    return result.length > 0 ? 'فقط ( ' + result.join(' و ') + ' ) لا غير' : 'لا توجد خدمة';
+  }, [tableTotalDuration]);
 
   const toArabicNumerals = (num: number | string): string => {
     const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
@@ -391,6 +557,11 @@ const App: React.FC = () => {
                           <td colspan="3" style="text-align: right; padding: 6px 8px;">المجموع</td>
                           <td>${toArabicNumerals(tableTotalDuration.days)}</td> <td>${toArabicNumerals(tableTotalDuration.months)}</td> <td>${toArabicNumerals(tableTotalDuration.years)}</td> <td></td>
                       </tr>
+                      <tr>
+                        <td colspan="7" style="text-align: center; font-weight: bold; padding: 0.75rem; color: #1f2937; background-color: #f3f4f6; border: 1px solid #d1d5db;">
+                          ${totalServiceInWords}
+                        </td>
+                      </tr>
                   </tfoot>
               </table>
               <div style="padding: 1rem; margin-top: 2rem;">
@@ -405,7 +576,7 @@ const App: React.FC = () => {
                   <div class="copy-to-section" style="text-align: right;">
                       <p>نسخة منه الى...</p>
                       <ul style="list-style-type: disc; list-style-position: inside; margin-right: 1rem;">
-                          <li>قسم حسابات المتقاعدين/شعبة الاستقطاع</li> <li>فرع هيأة التقاعد الوطنية ،،</li> <li>منظم القرار// ......................</li>
+                          <li>قسم حسابات المتقاعدين/شعبة الاستقطاع</li> <li>فرع هيأة التقاعد الوطنية ،،</li> <li>منظم القرار// ${currentUser?.fullName || currentUser?.username}</li>
                       </ul>
                   </div>
               </div>
@@ -516,6 +687,11 @@ const App: React.FC = () => {
                         <td>${toArabicNumerals(tableTotalDuration.months)}</td>
                         <td>${toArabicNumerals(tableTotalDuration.years)}</td>
                       </tr>
+                      <tr>
+                        <td colspan="6" style="text-align: center; font-weight: bold; padding: 0.75rem; color: #1f2937; background-color: #f3f4f6; border: 1px solid #d1d5db;">
+                          ${totalServiceInWords}
+                        </td>
+                      </tr>
                     </tfoot>
                 </table>
 
@@ -530,6 +706,7 @@ const App: React.FC = () => {
                     <div class="signer">
                         <div class="signature-line"></div>
                         <p><strong>اسم وتوقيع المنظم</strong></p>
+                        <p>${currentUser?.fullName || currentUser?.username}</p>
                     </div>
                     <div class="signer">
                         <div class="signature-line"></div>
@@ -552,31 +729,91 @@ const App: React.FC = () => {
     openPrintPreview(formHtml, 'طباعة استمارة احتساب الخدمة');
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-100 dark:bg-gray-900 font-[system-ui]">
-      <div className="w-full max-w-4xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6">
-          <header className="flex justify-between items-center">
-            <div className="text-right text-gray-800 dark:text-gray-200">
-              <p className="font-semibold">صندوق تقاعد موظفي الدولة</p>
-              <p className="text-sm">فرع البصرة</p>
-            </div>
-            <div className="text-center">
-              <div className="flex justify-center items-center gap-3 text-gray-700 dark:text-gray-200">
-                <SoldierIcon className="w-8 h-8"/>
-                <h1 className="text-2xl sm:text-3xl font-bold font-kufi text-yellow-500 dark:text-yellow-400">حاسبة احتساب الخدمة</h1>
-              </div>
-              <p className="text-gray-500 dark:text-gray-400 mt-2">
-                أدخل البيانات المطلوبة لحساب مدة الخدمة الإجمالية.
-              </p>
-            </div>
-            <div className="text-right text-gray-800 dark:text-gray-200 invisible">
-              <p className="font-semibold">صندوق تقاعد موظفي الدولة</p>
-              <p className="text-sm">فرع البصرة</p>
-            </div>
-          </header>
+  if (!currentUser) {
+    return <LoginScreen onLogin={handleLogin} users={users} />;
+  }
 
-          <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  return (
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 font-[system-ui] pb-10" dir="rtl">
+      
+      {/* Sticky Top Header Area */}
+      <div className="fixed top-0 left-0 right-0 z-50 w-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-md pb-4 pt-4 px-4 sm:px-8 border-b border-gray-200 dark:border-gray-700/80 shadow-sm">
+        <div className="max-w-6xl mx-auto w-full flex items-center justify-between">
+          
+          {/* Right Side (User Info) */}
+          <div className="flex-shrink-0 z-50">
+            <div className="relative">
+              <button 
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="flex items-center gap-2 p-1 bg-gray-50 dark:bg-gray-700/50 rounded-full shadow-sm hover:shadow transition-all border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              >
+                <div className="w-9 h-9 bg-gradient-to-tr from-yellow-500 to-yellow-400 dark:from-yellow-600 dark:to-yellow-500 rounded-full flex items-center justify-center text-white shadow-inner">
+                  <UserIcon className="w-4 h-4" />
+                </div>
+                <div className="hidden sm:block pl-3 pr-1 text-right">
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight">المنظم</p>
+                    <p className="text-xs font-bold text-gray-800 dark:text-gray-200 leading-tight max-w-[100px] truncate">{currentUser?.fullName || currentUser?.username}</p>
+                </div>
+              </button>
+
+              {isUserMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsUserMenuOpen(false)}></div>
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden z-50 origin-top-right transform transition-all duration-200 scale-100 opacity-100">
+                    <div className="px-4 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 text-right">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">تم الدخول بحساب</p>
+                      <p className="text-sm font-bold text-gray-800 dark:text-white truncate">{currentUser?.fullName || currentUser?.username}</p>
+                    </div>
+                    <div className="p-1">
+                        {currentUser?.role === 'admin' && (
+                          <button 
+                            onClick={() => {
+                              setIsUserMenuOpen(false);
+                              setIsManageUsersOpen(true);
+                            }}
+                            className="w-full text-right px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg flex items-center gap-3 transition-colors mb-1"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                            <span>إدارة المستخدمين</span>
+                          </button>
+                        )}
+                        <button 
+                          onClick={handleLogout}
+                          className="w-full text-right px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg flex items-center gap-3 transition-colors"
+                        >
+                          <LogOutIcon className="w-4 h-4" />
+                          <span>تسجيل خروج</span>
+                        </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Center (Logo & Title) */}
+          <div className="flex-1 flex flex-col items-center absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 mt-1 sm:mt-1">
+            <div className="flex flex-col items-center gap-1 sm:gap-1.5">
+              <img src="/logo.png" alt="شعار الدائرة" className="w-10 h-10 sm:w-12 sm:h-12 object-contain drop-shadow-md" />
+              <div className="flex items-center gap-1 sm:gap-1.5">
+                <SoldierIcon className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500 hidden sm:block"/>
+                <h1 className="text-sm sm:text-lg font-bold font-kufi text-yellow-600 dark:text-yellow-400">حاسبة احتساب الخدمة</h1>
+              </div>
+            </div>
+          </div>
+
+          {/* Left Side (Gov Text) */}
+          <div className="flex-shrink-0 text-left text-gray-600 dark:text-gray-300 hidden md:block">
+            <p className="font-semibold text-[11px] leading-tight mb-0.5">جمهورية العراق / وزارة المالية</p>
+            <p className="font-semibold text-[11px] leading-tight">هيأة التقاعد الوطنية - فرع البصرة</p>
+          </div>
+
+        </div>
+      </div>
+
+      <div className="w-full max-w-5xl mx-auto px-4 sm:px-8 pt-28 sm:pt-28 z-10 relative">
+        <div className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">الاسم</label>
                 <input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="ادخل الاسم هنا" className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-gray-100 placeholder-gray-400" />
@@ -618,7 +855,7 @@ const App: React.FC = () => {
                   <select value={row.serviceType} onChange={e => handleRowChange(row.id, 'serviceType', e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 dark:text-gray-100 col-span-2 sm:col-span-1">
                     <option value="">اختر النوع</option>
                     <option value="عسكرية">عسكرية</option>
-                    <option value="عسكرية مضاعفة">عسكرية مضاعفة</option>
+                    <option value="حركات">حركات</option>
                   </select>
                   <CustomDateInput value={row.start} onChange={e => handleRowChange(row.id, 'start', e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500" />
                   <CustomDateInput value={row.end} onChange={e => handleRowChange(row.id, 'end', e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500" />
@@ -641,7 +878,7 @@ const App: React.FC = () => {
           
            <div className="pt-6 border-t border-gray-200 dark:border-gray-700 space-y-4">
              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">النتائج</h2>
-            <div className="bg-gray-100 dark:bg-gray-700/50 p-4 rounded-lg">
+            <div className="bg-gray-100 dark:bg-gray-700/50 p-4 rounded-lg flex flex-col gap-3">
               <div className="flex justify-between items-center text-gray-800 dark:text-gray-200">
                 <span className="font-bold text-lg">مجموع الخدمة الإجمالي:</span>
                 <div className="flex gap-2 text-lg font-mono font-bold text-blue-600 dark:text-blue-400">
@@ -649,6 +886,11 @@ const App: React.FC = () => {
                   <span>{toArabicNumerals(tableTotalDuration.months)} <span className="text-xs text-gray-500 dark:text-gray-400">شهر</span></span>
                   <span>{toArabicNumerals(tableTotalDuration.years)} <span className="text-xs text-gray-500 dark:text-gray-400">سنة</span></span>
                 </div>
+              </div>
+              <div className="text-left w-full border-t border-gray-200 dark:border-gray-600 pt-3 mt-1 text-center">
+                <span className="inline-block bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300 text-sm sm:text-base px-4 py-2 rounded-lg font-medium w-full shadow-sm border border-blue-200 dark:border-blue-800">
+                  {totalServiceInWords}
+                </span>
               </div>
             </div>
             {rawPensionDeductionAmount > 0 && (
@@ -666,10 +908,16 @@ const App: React.FC = () => {
           
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
-          <div className="pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div className="text-center sm:text-right text-sm text-gray-500 dark:text-gray-400 order-last sm:order-first">
-                <p>تصميم</p>
-                <p className="font-semibold font-kufi text-yellow-500 dark:text-yellow-400">المبرمج سيف علي</p>
+          <div className="pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-end gap-6">
+            <div className="flex flex-col items-center sm:items-start text-sm order-last sm:order-first">
+                <div className="relative mb-2 group cursor-default">
+                  <div className="absolute inset-0 bg-yellow-500/20 rounded-xl blur-md group-hover:bg-yellow-500/30 transition-all duration-300"></div>
+                  <img src="/sa-logo.png" alt="شعار المبرمج سيف علي" className="relative w-16 h-16 object-contain drop-shadow-xl" />
+                </div>
+                <div className="text-center sm:text-right">
+                  <p className="text-gray-500 dark:text-gray-400 text-xs mb-0.5 tracking-wider uppercase">تصميم وتطوير</p>
+                  <p className="font-semibold text-sm bg-gradient-to-l from-yellow-600 to-yellow-500 dark:from-yellow-500 dark:to-yellow-300 bg-clip-text text-transparent drop-shadow-sm">المبرمج سيف علي</p>
+                </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                 <button onClick={handlePrintForm} className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 focus:ring-4 focus:outline-none focus:ring-gray-300 dark:bg-gray-500 dark:hover:bg-gray-600 dark:focus:ring-gray-800 transition w-full sm:w-auto">
@@ -683,6 +931,15 @@ const App: React.FC = () => {
             </div>
           </div>
       </div>
+
+      {isManageUsersOpen && (
+        <ManageUsersModal 
+          users={users} 
+          onClose={() => setIsManageUsersOpen(false)} 
+          onUpdateUsers={(newUsers) => setUsers(newUsers)} 
+          currentUser={currentUser}
+        />
+      )}
     </div>
   );
 };
