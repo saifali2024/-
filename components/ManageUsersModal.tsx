@@ -1,22 +1,22 @@
 import React, { useState } from 'react';
 import { User, UserRole } from '../types';
 import { TrashIcon, PlusIcon, EditIcon } from './icons';
+import { saveUser, deleteUserDb } from '../firebase';
 
 interface Props {
   users: User[];
   onClose: () => void;
-  onUpdateUsers: (newUsers: User[]) => void;
   currentUser: User;
 }
 
-export const ManageUsersModal: React.FC<Props> = ({ users, onClose, onUpdateUsers, currentUser }) => {
+export const ManageUsersModal: React.FC<Props> = ({ users, onClose, currentUser }) => {
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [newUsername, setNewUsername] = useState('');
   const [newFullName, setNewFullName] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newRole, setNewRole] = useState<UserRole>('user');
 
-  const handleSubmitForm = (e: React.FormEvent) => {
+  const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUsername.trim() || !newPassword.trim() || !newFullName.trim()) return;
     
@@ -26,20 +26,16 @@ export const ManageUsersModal: React.FC<Props> = ({ users, onClose, onUpdateUser
         return;
       }
 
-      const updatedUsers = users.map(u => {
-        if (u.id === editingUserId) {
-          return {
-            ...u,
-            username: newUsername.trim(),
-            fullName: newFullName.trim(),
-            password: newPassword,
-            role: newRole,
-          };
-        }
-        return u;
-      });
-
-      onUpdateUsers(updatedUsers);
+      const userToUpdate = users.find(u => u.id === editingUserId);
+      if (userToUpdate) {
+        await saveUser({
+          ...userToUpdate,
+          username: newUsername.trim(),
+          fullName: newFullName.trim(),
+          password: newPassword,
+          role: newRole,
+        });
+      }
       handleCancelEdit();
     } else {
       if (users.some(u => u.username === newUsername.trim())) {
@@ -56,7 +52,8 @@ export const ManageUsersModal: React.FC<Props> = ({ users, onClose, onUpdateUser
         createdAt: Date.now()
       };
 
-      onUpdateUsers([...users, newUser]);
+      await saveUser(newUser);
+
       setNewUsername('');
       setNewFullName('');
       setNewPassword('');
@@ -80,12 +77,12 @@ export const ManageUsersModal: React.FC<Props> = ({ users, onClose, onUpdateUser
     setNewRole('user');
   };
 
-  const handleDeleteUser = (id: string) => {
+  const handleDeleteUser = async (id: string) => {
     if (id === currentUser.id) {
       alert('لا يمكنك حذف حسابك الحالي');
       return;
     }
-    onUpdateUsers(users.filter(u => u.id !== id));
+    await deleteUserDb(id);
   };
 
   return (

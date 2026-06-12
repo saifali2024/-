@@ -3,6 +3,7 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { ServiceRow, Duration, ServiceType, User } from './types';
 import { SoldierIcon, PlusIcon, TrashIcon, PrintIcon, ApprovedIcon, UserIcon, LogOutIcon } from './components/icons';
 import { ManageUsersModal } from './components/ManageUsersModal';
+import { subscribeToUsers, initAdminUser } from './firebase';
 
 const CustomDateInput = ({ id, value, onChange, className }: { id?: string, value: string, onChange: (e: any) => void, className?: string }) => {
   const [d, setD] = useState('');
@@ -93,20 +94,6 @@ const SALARY_MAP: { [key: string]: string } = {
   'بدون شهادة': '170000',
 };
 
-const defaultUsers: User[] = [
-  { id: '1', fullName: 'المدير العام', username: 'admin', password: '123', role: 'admin', createdAt: Date.now() },
-];
-
-const loadUsers = (): User[] => {
-  const usersStr = localStorage.getItem('appUsers');
-  if (usersStr) {
-    try {
-      return JSON.parse(usersStr);
-    } catch { }
-  }
-  return defaultUsers;
-};
-
 const LoginScreen: React.FC<{ onLogin: (user: User) => void, users: User[] }> = ({ onLogin, users }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -175,7 +162,7 @@ const LoginScreen: React.FC<{ onLogin: (user: User) => void, users: User[] }> = 
 };
 
 const App: React.FC = () => {
-  const [users, setUsers] = useState<User[]>(loadUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const cuStr = localStorage.getItem('currentUserObj');
     if (cuStr) {
@@ -189,8 +176,12 @@ const App: React.FC = () => {
   const [isManageUsersOpen, setIsManageUsersOpen] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('appUsers', JSON.stringify(users));
-  }, [users]);
+    initAdminUser();
+    const unsubscribe = subscribeToUsers((newUsers) => {
+      setUsers(newUsers);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleLogin = (user: User) => {
     localStorage.setItem('currentUserObj', JSON.stringify(user));
@@ -543,7 +534,7 @@ const App: React.FC = () => {
                           <th style="min-width: 150px;">نوع الخدمة</th> <th style="min-width: 90px;">من</th> <th style="min-width: 90px;">إلى</th> <th>يوم</th> <th>شهر</th> <th>سنة</th> <th>الملاحظات</th>
                       </tr>
                   </thead>
-                  <tbody>${validServiceRows.map(row => `
+                  <tbody>${validServiceRows.map((row: ServiceRow) => `
                       <tr>
                           <td>${row.serviceType}</td>
                           <td style="white-space: nowrap;">${formatDateWithArabicNumerals(row.start)}</td>
@@ -670,7 +661,7 @@ const App: React.FC = () => {
                     <thead>
                         <tr><th>نوع الخدمة</th><th>من</th><th>الى</th><th>يوم</th><th>شهر</th><th>سنة</th></tr>
                     </thead>
-                    <tbody>${validServiceRows.map(row => `
+                    <tbody>${validServiceRows.map((row: ServiceRow) => `
                         <tr>
                             <td>${row.serviceType}</td>
                             <td>${formatDateWithArabicNumerals(row.start)}</td>
@@ -848,7 +839,7 @@ const App: React.FC = () => {
             <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">فترات الخدمة</h2>
             <div className="space-y-4">
               <div className="hidden sm:grid grid-cols-[1fr,1fr,1fr,auto,auto,auto,auto] gap-2 text-sm font-medium text-gray-600 dark:text-gray-400 px-2">
-                {tableHeaders.slice(0, 6).map(header => <span key={header}>{header}</span>)}
+                {tableHeaders.slice(0, 6).map((header: string) => <span key={header}>{header}</span>)}
               </div>
               {serviceRows.map((row) => (
                 <div key={row.id} className="grid grid-cols-1 sm:grid-cols-[1fr,1fr,1fr,auto,auto,auto,auto] gap-2 items-center bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600/20 transition-colors duration-200">
@@ -936,7 +927,6 @@ const App: React.FC = () => {
         <ManageUsersModal 
           users={users} 
           onClose={() => setIsManageUsersOpen(false)} 
-          onUpdateUsers={(newUsers) => setUsers(newUsers)} 
           currentUser={currentUser}
         />
       )}

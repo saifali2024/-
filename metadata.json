@@ -1,6 +1,6 @@
 {
-  "name": "حاسبة الخدمة العسكرية",
-  "description": "تطبيق ويب لحساب إجمالي مدة الخدمة العسكرية بناءً على فترات متعددة. أدخل اسمك، وأضف فترات الخدمة من تاريخ البدء إلى تاريخ الانتهاء، وسيقوم التطبيق بحساب المجموع بالسنوات والأشهر والأيام.",
+  "name": "military-service-calculator",
+  "description": "A web application to calculate total military service duration based on multiple periods.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
