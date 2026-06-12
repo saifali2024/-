@@ -138,7 +138,7 @@ const LoginScreen: React.FC<{ onLogin: (user: User) => void, users: User[] }> = 
             <SoldierIcon className="w-12 h-12 text-yellow-500" />
           </div>
           <h1 className="text-2xl font-bold font-kufi text-gray-800 dark:text-white">تسجيل الدخول</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-2">نظام احتساب الخدمة</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-2">نظام احتساب الخدمة العسكرية</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
@@ -797,7 +797,7 @@ const App: React.FC = () => {
               <img src="/logo.png" alt="شعار الدائرة" className="w-10 h-10 sm:w-12 sm:h-12 object-contain drop-shadow-md" />
               <div className="flex items-center gap-1 sm:gap-1.5">
                 <SoldierIcon className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500 hidden sm:block"/>
-                <h1 className="text-sm sm:text-lg font-bold font-kufi text-yellow-600 dark:text-yellow-400">حاسبة احتساب الخدمة</h1>
+                <h1 className="text-sm sm:text-lg font-bold font-kufi text-yellow-600 dark:text-yellow-400">نظام احتساب الخدمة العسكرية</h1>
               </div>
             </div>
           </div>
