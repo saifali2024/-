@@ -3,6 +3,84 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { ServiceRow, Duration, ServiceType } from './types';
 import { SoldierIcon, PlusIcon, TrashIcon, PrintIcon, ApprovedIcon } from './components/icons';
 
+const CustomDateInput = ({ id, value, onChange, className }: { id?: string, value: string, onChange: (e: any) => void, className?: string }) => {
+  const [d, setD] = useState('');
+  const [m, setM] = useState('');
+  const [y, setY] = useState('');
+
+  React.useEffect(() => {
+    if (value) {
+      const parts = value.split('-');
+      if (parts.length === 3) {
+        setY(parts[0]);
+        setM(parts[1]);
+        setD(parts[2]);
+      }
+    } else {
+      setY('');
+      setM('');
+      setD('');
+    }
+  }, [value]);
+
+  const triggerChange = (newY: string, newM: string, newD: string) => {
+    if (newY.length === 4 && newM.length > 0 && newD.length > 0) {
+      const yy = newY.padStart(4, '0');
+      const mm = newM.padStart(2, '0');
+      const dd = newD.padStart(2, '0');
+      onChange({ target: { value: `${yy}-${mm}-${dd}` } });
+    } else {
+      onChange({ target: { value: '' } });
+    }
+  };
+
+  const handleD = (e: any) => { 
+    const val = e.target.value.replace(/\D/g, '').slice(0, 2);
+    setD(val); 
+    triggerChange(y, m, val); 
+  };
+  const handleM = (e: any) => { 
+    const val = e.target.value.replace(/\D/g, '').slice(0, 2);
+    setM(val); 
+    triggerChange(y, val, d); 
+  };
+  const handleY = (e: any) => { 
+    const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+    setY(val); 
+    triggerChange(val, m, d); 
+  };
+
+  const containerClassName = className ? className.replace(/focus:/g, 'focus-within:') : 'w-full px-3 py-2 bg-white border border-gray-300 rounded-md';
+
+  return (
+    <div 
+      className={`relative flex items-center justify-start font-mono ${containerClassName}`}
+      dir="rtl"
+    >
+      <input id={id} type="text" inputMode="numeric" placeholder="يوم" value={d} onChange={handleD} className="w-8 sm:w-10 bg-transparent text-center focus:outline-none focus:ring-1 focus:ring-blue-500 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400 py-0" />
+      <span className="text-gray-400 mx-1">/</span>
+      <input type="text" inputMode="numeric" placeholder="شهر" value={m} onChange={handleM} className="w-8 sm:w-10 bg-transparent text-center focus:outline-none focus:ring-1 focus:ring-blue-500 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400 py-0" />
+      <span className="text-gray-400 mx-1">/</span>
+      <input type="text" inputMode="numeric" placeholder="سنة" value={y} onChange={handleY} className="w-12 sm:w-14 bg-transparent text-center focus:outline-none focus:ring-1 focus:ring-blue-500 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400 py-0" />
+      
+      <div className="flex-1"></div>
+      
+      <div className="relative w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center flex-shrink-0 text-gray-400 hover:text-blue-500 transition-colors cursor-pointer">
+        <svg className="w-4 h-4 sm:w-5 sm:h-5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        <input 
+          type="date" 
+          value={value}
+          onChange={(e) => onChange(e)}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+          aria-label="اختر التاريخ من التقويم"
+        />
+      </div>
+    </div>
+  );
+};
+
 const SALARY_MAP: { [key: string]: string } = {
   'دكتوراه': '429000',
   'ماجستير': '374000',
@@ -41,30 +119,31 @@ const App: React.FC = () => {
     const startDate = new Date(startStr);
     const endDate = new Date(endStr);
 
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return null;
     if (endDate < startDate) return null;
   
-    let y1 = startDate.getFullYear();
-    let m1 = startDate.getMonth() + 1;
+    const y1 = startDate.getFullYear();
+    const m1 = startDate.getMonth() + 1;
     let d1 = startDate.getDate();
+    if (d1 === 31) d1 = 30;
     
-    let y2 = endDate.getFullYear();
-    let m2 = endDate.getMonth() + 1;
+    const y2 = endDate.getFullYear();
+    const m2 = endDate.getMonth() + 1;
     let d2 = endDate.getDate();
+    if (d2 === 31) d2 = 30;
     
-    d2 += 1;
+    let days = d2 - d1;
+    let months = m2 - m1;
+    let years = y2 - y1;
 
-    if (d2 < d1) {
-        d2 += 30;
-        m2 -= 1;
+    if (days < 0) {
+      days += 30;
+      months -= 1;
     }
-    if (m2 < m1) {
-        m2 += 12;
-        y2 -= 1;
+    if (months < 0) {
+      months += 12;
+      years -= 1;
     }
-
-    const days = d2 - d1;
-    const months = m2 - m1;
-    const years = y2 - y1;
 
     return { years, months, days };
   }, []);
@@ -316,8 +395,8 @@ const App: React.FC = () => {
               </table>
               <div style="padding: 1rem; margin-top: 2rem;">
                   <div style="text-align: left; margin-bottom: 2rem;">
-                      <p>ع/ مدير عام صندوق تقاعد موظفي الدولة</p>
-                      <p style="margin-top: 0.5rem;">مدير صندوق تقاعد موظفي الدولة/فرع البصرة</p>
+                      <p>ع/رئيس هيأة التقاعد الوطنية</p>
+                      <p style="margin-top: 0.5rem;">مدير هيأة التقاعد الوطنية / فرع البصرة</p>
                       <br />
                   </div>
                   <div style="text-align: right; line-height: 2; margin-bottom: 2rem;">
@@ -484,7 +563,7 @@ const App: React.FC = () => {
             <div className="text-center">
               <div className="flex justify-center items-center gap-3 text-gray-700 dark:text-gray-200">
                 <SoldierIcon className="w-8 h-8"/>
-                <h1 className="text-2xl sm:text-3xl font-bold font-kufi">حاسبة احتساب الخدمة</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold font-kufi text-yellow-500 dark:text-yellow-400">حاسبة احتساب الخدمة</h1>
               </div>
               <p className="text-gray-500 dark:text-gray-400 mt-2">
                 أدخل البيانات المطلوبة لحساب مدة الخدمة الإجمالية.
@@ -504,15 +583,15 @@ const App: React.FC = () => {
               </div>
               <div>
                 <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">المواليد</label>
-                <input type="date" id="dateOfBirth" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-gray-100" />
+                <CustomDateInput id="dateOfBirth" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
               </div>
               <div>
                 <label htmlFor="appointmentDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">تاريخ التعيين</label>
-                <input type="date" id="appointmentDate" value={appointmentDate} onChange={(e) => setAppointmentDate(e.target.value)} className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-gray-100" />
+                <CustomDateInput id="appointmentDate" value={appointmentDate} onChange={(e) => setAppointmentDate(e.target.value)} className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
               </div>
               <div>
                 <label htmlFor="disengagementDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">تاريخ الانفكاك</label>
-                <input type="date" id="disengagementDate" value={disengagementDate} onChange={(e) => setDisengagementDate(e.target.value)} className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-gray-100" />
+                <CustomDateInput id="disengagementDate" value={disengagementDate} onChange={(e) => setDisengagementDate(e.target.value)} className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
               </div>
                <div>
                 <label htmlFor="education" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">التحصيل الدراسي</label>
@@ -541,8 +620,8 @@ const App: React.FC = () => {
                     <option value="عسكرية">عسكرية</option>
                     <option value="عسكرية مضاعفة">عسكرية مضاعفة</option>
                   </select>
-                  <input type="date" value={row.start} onChange={e => handleRowChange(row.id, 'start', e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 dark:text-gray-100" />
-                  <input type="date" value={row.end} onChange={e => handleRowChange(row.id, 'end', e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 dark:text-gray-100" />
+                  <CustomDateInput value={row.start} onChange={e => handleRowChange(row.id, 'start', e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500" />
+                  <CustomDateInput value={row.end} onChange={e => handleRowChange(row.id, 'end', e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500" />
                   <div className="col-span-1 sm:col-span-3 grid grid-cols-3 gap-1 text-center font-mono text-sm sm:text-base text-gray-800 dark:text-gray-200">
                     <span className="bg-gray-200 dark:bg-gray-600 p-2 rounded-md">{toArabicNumerals(row.duration?.days ?? 0)}</span>
                     <span className="bg-gray-200 dark:bg-gray-600 p-2 rounded-md">{toArabicNumerals(row.duration?.months ?? 0)}</span>
